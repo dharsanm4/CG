@@ -1,111 +1,149 @@
-#include<stdio.h>
-#include<glut.h>
-GLfloat xmin=-0.5,ymin=-0.5,xmax=0.5,ymax=0.5;
-GLfloat x1=-0.7,y1=-0.3,x2=0.6,y2=0.9;
-int LEFT =1;
- int RIGHT =2;
- int BOTTOM =4;
- int TOP =8;
- int c1,c2;
- int clip_flag=0,flag=1;
- int get_code(GLfloat x,GLfloat y)
- {
-	 int code=0;
-	 if(x<xmin)
-		code |= LEFT;
-	else if(x>xmax)
-		code |= RIGHT;
-	if(y<ymin)
-		code |= BOTTOM;
-	else if(y>ymax)
-		code |= TOP;
-	return code;
-}
- void clip()
- {
-	 int c;
-	 GLfloat x,y;
-	 if(c1)
-		 c=c1;
-	 else 
-		 c=c2;
-	 if(c&LEFT)
-	 {
-		 x=xmin;
-		 y=y1+(y2-y1)*(xmin-x1)/(x2-x1);
-	 }
-	  if(c&RIGHT)
-	 {
-		 y=y1+(y2-y1)*(xmax-x1)/(x2-x1);
-		x=xmax;
-	 }
-	 if(c&BOTTOM)
-	 {
-		 x=x1+(x2-x1)*(ymin-y1)/(y2-y1);
-				y=ymin;
-	 }
-	  if(c&TOP)
-	 {
-		 x=x1+(x2-x1)*(ymax-y1)/(y2-y1);
-				y=ymax;
-	 }
-	  if(c==c1)
-	  {
-		  x1=x;
-	      y1=y;
-	  }
-	  else
-	  {
-		  x2=x;
-		  y2=y;
-	  }
- }
- void display()
- {
-	 glClear(GL_COLOR_BUFFER_BIT);
-	glColor3f(1.0,1.0,1.0);
-	glBegin(GL_LINE_LOOP);
-	glVertex2f(xmin,ymin);
-	glVertex2f(xmax,ymin);
-	glVertex2f(xmax,ymax);
-	glVertex2f(xmin,ymax);
-	glEnd();
-	glColor3f(1,1,0);
-	if(flag==1)
-	{
-	glBegin(GL_LINES);
-	glVertex2d(x1,y1);
-	glVertex2d(x2,y2);
-	glEnd();
-	}
-	while(1&&clip_flag==1)
-	{
-		c1=get_code(x1,y1);
-		c2=get_code(x2,y2);
-
-    if((c1|c2)==0)
-		break;
-	else if((c1&c2)!=0)
-	{
-		flag=0;
-		break;
-	}
-	else clip();
-    }  
- glFlush();
- }
- void key(unsigned char ch,int x,int y)
- {
-	 clip_flag=1;
-	 glutPostRedisplay();
- }
- void main(int argc,char** argv)
+ #include<stdio.h>
+#include<GL\glut.h>
+double xmin=50,ymin=50,xmax=100,ymax=100;
+double xvmin=200,yvmin=200,xvmax=300,yvmax=300;
+const int INSIDE = 0; // 0000 
+const int LEFT = 1; // 0001 
+const int RIGHT = 2; // 0010 
+const int BOTTOM = 4; // 0100 
+const int TOP = 8; // 1000
+int computeoutcode(double x,double y)
 {
-	glutInit(&argc,argv);
-	glutInitWindowSize(500,500);
-	glutInitDisplayMode(GLUT_SINGLE|GLUT_RGB);
-	glutCreateWindow("Cohen-Sutherland Algorithm:4KV19CS054");
-	glutDisplayFunc(display);
-	glutKeyboardFunc(key);
-	glutMainLoop();
+// iniƟ alized as being inside 
+ int code = INSIDE; 
+ 
+ if (x < x_min) // to the leŌ of rectangle 
+ code |= LEFT; 
+ else if (x > x_max) // to the right of rectangle 
+ code |= RIGHT; 
+ if (y < y_min) // below the rectangle 
+ code |= BOTTOM; 
+ else if (y > y_max) // above the rectangle 
+ code |= TOP; 
+ 
+ return code; 
+}
+void cohensutherland(double x0,double y0,double x1,double y1)
+{
+int outcode0,outcode1,outcodeout;
+// Compute region codes for P1, P2 
+ outcode0=computeoutcode(x0,y0);
+outcode1=computeoutcode(x1,y1);
+ // IniƟ alize line as outside the rectangular window 
+ bool accecpt=false,done=false;
+do{
+if(!(outcode0|outcode1))
+{ // If both endpoints lie within rectangle
+accecpt=true;
+done=true;
+}
+else if(outcode0 & outcode1)
+{ // If both endpoints are outside rectangle, 
+ // in same region 
+ done=true;
+}
+else
+{ // Some segment of line lies within the 
+ // rectangle
+double x,y;
+// At least one endpoint is outside the 
+ // rectangle, pick it. 
+ if (outcode0!= 0) 
+ outcodeout = outcode0; 
+ else
+ outcodeout = outcode1; 
+if(outcodeout & TOP)
+{
+x=x0+(x1-x0)*(ymax-y0)/(y1-y0);
+y=ymax;
+}
+else if(outcodeout & BOTTOM)
+{
+x=x0+(x1-x0)*(ymin-y0)/(y1-y0);
+y=ymin;
+}
+else if(outcodeout & RIGHT)
+{
+y=y0+(y1-y0)*(xmax-x0)/(x1-x0);
+x=xmax;
+}
+else
+{
+y=y0+(y1-y0)*(xmin-x0)/(x1-x0);
+x=xmin;
+}
+/ Now intersecƟ on point x,y is found 
+ // We replace point outside rectangle 
+ // by intersecƟ on point 
+if(outcodeout==outcode0)
+{
+x0=x;
+y0=y;
+outcode0=computeoutcode(x0,y0);
+}
+else
+{
+x1=x;
+y1=y;
+outcode1=computeoutcode(x1,y1);
+} }
+}while(!done);
+if(accecpt)
+{
+double sx=(xvmax-xvmin)/(xmax-xmin);
+double sy=(yvmax-yvmin)/(ymax-ymin);
+double vx0=xvmin+(x0-xmin)*sx;
+double vy0=yvmin+(y0-ymin)*sy;
+double vx1=xvmin+(x1-xmin)*sx;
+double vy1=yvmin+(y1-ymin)*sy;
+glColor3f(1.0,1.0,1.0);
+glBegin(GL_LINE_LOOP);
+glVertex2f(xvmin,yvmin);
+glVertex2f(xvmax,yvmin);
+glVertex2f(xvmax,yvmax);
+glVertex2f(xvmin,yvmax);
+glEnd();
+glColor3f(1.0,1.0,1.0);
+glBegin(GL_LINES);
+glVertex2d(vx0,vy0);
+glVertex2d(vx1,vy1);
+glEnd();
+} }
+void display()
+{
+double x0=60,y0=20,x1=80,y1=120;
+glClear(GL_COLOR_BUFFER_BIT);
+glColor3f(1.0,1.0,1.0);
+glBegin(GL_LINES);
+ glVertex2d(x0,y0);
+ glVertex2d(x1,y1);
+ glEnd();
+ glColor3f(1.0,1.0,1.0);
+ glBegin(GL_LINE_LOOP);
+ glVertex2f(xmin,ymin);
+ glVertex2f(xmax,ymin);
+ glVertex2f(xmax,ymax);
+ glVertex2f(xmin,ymax);
+ glEnd();
+cohensutherland(x0,y0,x1,y1);
+ glFlush();
+}
+void myinit()
+{
+glClearColor(0.0,0.0,0.0,1.0);
+glMatrixMode(GL_PROJECTION);
+glLoadIdenƟ ty();
+gluOrtho2D(1.0,500.0,0.0,500.0);
+glMatrixMode(GL_MODELVIEW);
+}
+void main(int argc,char** argv)
+{
+glutInit(&argc,argv);
+glutInitDisplayMode(GLUT_SINGLE|GLUT_RGB);
+glutInitWindowSize(500,500);
+glutInitWindowPosiƟ on(0,0);
+glutCreateWindow("cohen sutherland algorithm");
+myinit();
+glutDisplayFunc(display);
+glutMainLoop();
 }
