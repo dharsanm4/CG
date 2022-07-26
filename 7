@@ -1,0 +1,189 @@
+#include<stdlib.h>
+#include<stdio.h>
+#include<GL/glut.h>
+typedef float point[3];
+point v[]={{0.0,0.0,1.0},{0.0,0.9,0.3},{-0.8,-0.4,-0.3},{0.8,-0.4,-0.3}};
+int n;
+void triangle(point a,point b,point c)
+{
+glBegin(GL_POLYGON);
+glVertex3fv(a);
+glVertex3fv(b);
+glVertex3fv(c);
+glEnd();
+}
+void divide_triangle(point a,point b,point c,int m)
+{
+point v1,v2,v3;
+int j;
+if(m>0)
+{ 
+for(j=0;j<3;j++)
+v1[j]=(a[j]+b[j])/2;
+for(j=0;j<3;j++)
+v2[j]=(a[j]+c[j])/2;
+for(j=0;j<3;j++)
+v3[j]=(b[j]+c[j])/2;
+divide_triangle(a,v1,v2,m-1);
+divide_triangle(c,v2,v3,m-1);
+divide_triangle(b,v3,v1,m-1);
+}
+else(triangle(a,b,c));
+}
+void tetrahedron(int m)
+{
+glColor3f(1.0,0.0,0.0);
+divide_triangle(v[0],v[1],v[2],m);
+glColor3f(0.0,1.0,0.0);
+divide_triangle(v[3],v[2],v[1],m);
+glColor3f(0.0,0.0,1.0);
+divide_triangle(v[0],v[3],v[1],m);
+glColor3f(0.0,0.0,0.0);
+divide_triangle(v[0],v[2],v[3],m);
+}
+void display(void)
+{
+glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+glLoadIdenƟ ty();
+tetrahedron(n);
+glFlush();
+}
+void myReshape(int w,int h)
+{
+glViewport(0,0,w,h);
+glMatrixMode(GL_PROJECTION);
+glLoadIdenƟ ty();
+if(w<=h)
+glOrtho(-2.0,2.0,-2.0*(GLfloat) h/(GLfloat)w,2.0*(GLfloat)h/(GLfloat)w,-
+10.0,10.0);
+else
+glOrtho(-2.0*(GLfloat) w/(GLfloat)h,2.0*(GLfloat) w/(GLfloat)h,-.0,2.0,-
+10.0,10.0);
+glMatrixMode(GL_MODELVIEW);
+glutPostRedisplay();
+}
+void main(int argc,char ** argv)
+{
+prinƞ ("Enter the number of division?");
+scanf_s("%d",&n);
+glutInit(&argc,argv);
+glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB | GLUT_DEPTH);
+glutInitWindowSize(500,500);
+glutCreateWindow("3D Gasket");
+glutReshapeFunc(myReshape);
+glutDisplayFunc(display);
+glEnable(GL_DEPTH_TEST);
+glClearColor(1.0,1.0,1.0,1.0);
+glutMainLoop();
+}
+#include<stdio.h>
+#include<GL/glut.h>
+#include<math.h>
+#define Pi 3.1416
+typedef struct point 
+{
+GLfloat x,y,z;
+};
+void bino(int n,int *c)
+{
+int k,j;
+for(k=0;k<=n;k++)
+{
+c[k]=1;
+for(j=n;j>=k+1;j--)
+c[k]*=j;
+for(j=n-k;j>=2;j--)
+c[k]/=j;
+} }
+void computebezPt(float u,point *pt1,int cPt,point *pt2,int *c)
+{
+int k,n=cPt-1;
+float bFcn;
+pt1->x=pt1->y=pt1->z=0.0;
+for(k=0;k<cPt;k++)
+{
+bFcn=c[k]*pow(u,k)*pow(1-u,n-k);
+pt1->x+=pt2[k].x*bFcn;
+pt1->y+=pt2[k].y*bFcn;
+pt1->z+=pt2[k].z*bFcn;
+}
+void bezier(point *pt1,int cPt,int bPt)
+{
+point bcPt;
+float u;
+int *c,k;
+c=new int [cPt];
+bino(cPt-1,c);
+glBegin(GL_LINE_STRIP);
+for(k=0;k<=bPt;k++)
+{
+u=float(k)/float(bPt);
+computebezPt(u,&bcPt,cPt,pt1,c);
+glVertex2f(bcPt.x,bcPt.y);
+}
+glEnd();
+delete[]c;
+}
+float theta=0;
+void display()
+{
+glClear(GL_COLOR_BUFFER_BIT);
+int nctrlPts=4,nBcPts=20;
+point ctrlPts[4]={{100,400,0},{150,450,0},{250,350,0},{300,400,0}};
+ctrlPts[1].x+=50*sin(theta*Pi/180.0);
+ctrlPts[1].y+=25*sin(theta*Pi/180.0);
+ctrlPts[2].x-=50*sin((theta+30)*Pi/180.0);
+ctrlPts[2].y-=50*sin((theta+30)*Pi/180.0);
+ctrlPts[3].x-=25*sin((theta)*Pi/180.0);
+ctrlPts[3].y+=25*sin((theta-30)*Pi/180.0);
+theta+=0.2;
+glClear(GL_COLOR_BUFFER_BIT);
+glColor3f(1.0,1.0,1.0);
+glPointSize(5);
+glPushMatrix();
+glLineWidth(5);
+glColor3f(1.0,0.4,0.2);
+for(int i=0;i<50;i++)
+{
+glTranslatef(0.0,-0.8,0.0);
+bezier(ctrlPts,nctrlPts,nBcPts);
+}
+glColor3f(1,1,1);
+for(int i=0;i<50;i++)
+{
+glTranslatef(0,-0.8,0);
+bezier(ctrlPts,nctrlPts,nBcPts);
+}
+glColor3f(0,1,0);
+for(int i=0;i<50;i++)
+{
+glTranslatef(0,-0.8,0);
+bezier(ctrlPts,nctrlPts,nBcPts);
+}
+glPopMatrix();
+glColor3f(0.7,0.5,0.3);
+glLineWidth(5);
+glBegin(GL_LINES);
+glVertex2f(100,400);
+glVertex2f(100,40);
+glEnd();
+glutPostRedisplay();
+glutSwapBuffers();
+}
+void init()
+{
+glMatrixMode(GL_PROJECTION);
+glLoadIdenƟ ty();
+gluOrtho2D(0,500,0,500);
+}
+void main(int argc,char **argv)
+{
+glutInit(&argc,argv);
+glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB);
+glutInitWindowPosiƟ on(0,0);
+glutInitWindowSize(500,500);
+glutCreateWindow("Bezer Curve Algorithm");
+init();
+glutDisplayFunc(display);
+glutMainLoop();
+}
