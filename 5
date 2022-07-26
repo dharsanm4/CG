@@ -1,0 +1,111 @@
+#include<stdio.h>
+#include<glut.h>
+GLfloat xmin=-0.5,ymin=-0.5,xmax=0.5,ymax=0.5;
+GLfloat x1=-0.7,y1=-0.3,x2=0.6,y2=0.9;
+int LEFT =1;
+ int RIGHT =2;
+ int BOTTOM =4;
+ int TOP =8;
+ int c1,c2;
+ int clip_flag=0,flag=1;
+ int get_code(GLfloat x,GLfloat y)
+ {
+	 int code=0;
+	 if(x<xmin)
+		code |= LEFT;
+	else if(x>xmax)
+		code |= RIGHT;
+	if(y<ymin)
+		code |= BOTTOM;
+	else if(y>ymax)
+		code |= TOP;
+	return code;
+}
+ void clip()
+ {
+	 int c;
+	 GLfloat x,y;
+	 if(c1)
+		 c=c1;
+	 else 
+		 c=c2;
+	 if(c&LEFT)
+	 {
+		 x=xmin;
+		 y=y1+(y2-y1)*(xmin-x1)/(x2-x1);
+	 }
+	  if(c&RIGHT)
+	 {
+		 y=y1+(y2-y1)*(xmax-x1)/(x2-x1);
+		x=xmax;
+	 }
+	 if(c&BOTTOM)
+	 {
+		 x=x1+(x2-x1)*(ymin-y1)/(y2-y1);
+				y=ymin;
+	 }
+	  if(c&TOP)
+	 {
+		 x=x1+(x2-x1)*(ymax-y1)/(y2-y1);
+				y=ymax;
+	 }
+	  if(c==c1)
+	  {
+		  x1=x;
+	      y1=y;
+	  }
+	  else
+	  {
+		  x2=x;
+		  y2=y;
+	  }
+ }
+ void display()
+ {
+	 glClear(GL_COLOR_BUFFER_BIT);
+	glColor3f(1.0,1.0,1.0);
+	glBegin(GL_LINE_LOOP);
+	glVertex2f(xmin,ymin);
+	glVertex2f(xmax,ymin);
+	glVertex2f(xmax,ymax);
+	glVertex2f(xmin,ymax);
+	glEnd();
+	glColor3f(1,1,0);
+	if(flag==1)
+	{
+	glBegin(GL_LINES);
+	glVertex2d(x1,y1);
+	glVertex2d(x2,y2);
+	glEnd();
+	}
+	while(1&&clip_flag==1)
+	{
+		c1=get_code(x1,y1);
+		c2=get_code(x2,y2);
+
+    if((c1|c2)==0)
+		break;
+	else if((c1&c2)!=0)
+	{
+		flag=0;
+		break;
+	}
+	else clip();
+    }  
+ glFlush();
+ }
+ void key(unsigned char ch,int x,int y)
+ {
+	 clip_flag=1;
+	 glutPostRedisplay();
+ }
+ void main(int argc,char** argv)
+{
+	glutInit(&argc,argv);
+	glutInitWindowSize(500,500);
+	glutInitDisplayMode(GLUT_SINGLE|GLUT_RGB);
+	glutCreateWindow("Cohen-Sutherland Algorithm:4KV19CS054");
+	glutDisplayFunc(display);
+	glutKeyboardFunc(key);
+	glutMainLoop();
+}
